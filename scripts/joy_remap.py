@@ -65,17 +65,18 @@ class RestrictedEvaluator(object):
 
 
 class JoyRemap(object):
-    def __init__(self):
+    def __init__(self, namespace):
+        self.namespace = namespace
         self.evaluator = RestrictedEvaluator()
         self.mappings = self.load_mappings("~mappings")
-        self.warn_remap("joy_out")
-        self.pub_joy = rospy.Publisher(
+        self.warn_remap(self.namespace + "/joy_out")
+        self.pub_joy = rospy.Publisher(self.namespace + "/"
             "joy_out", Joy, queue_size=1)
-        self.warn_remap("joy_in")
-        self.sub = rospy.Subscriber(
+        self.warn_remap(self.namespace + "/joy_in")
+        self.sub = rospy.Subscriber(self.namespace + "/"
             "joy_in", Joy, self.callback,
             queue_size=rospy.get_param("~queue_size", None))
-        self.pub_twist = rospy.Publisher(
+        self.pub_twist = rospy.Publisher(self.namespace + "/"
             "cmd_vel", Twist, queue_size=1)
 
     def load_mappings(self, ns):
@@ -125,9 +126,44 @@ class JoyRemap(object):
         twist_msg.linear.y = out_msg.axes[1]
         twist_msg.angular.z = out_msg.axes[2]
         self.pub_twist.publish(twist_msg)
+        rospy.set_param(self.namespace + "/operation_cmd/motion_mode", out_msg.buttons[0])
 
+
+def main(args):
+    rospy.init_node("joy_remap")
+    n = JoyRemap(args.namespace)
+    rospy.spin()
 
 if __name__ == '__main__':
-    rospy.init_node("joy_remap")
-    n = JoyRemap()
-    rospy.spin()
+    """ The script to run the Ambot script in ROS.
+    It's designed as a main function and not designed to be a scalable code.
+    """
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--namespace",
+        type= str,
+        default= "/ambot_v1",                    
+    )
+    parser.add_argument("--logdir",
+        type= str,
+        help= "The log directory of the trained model",
+        default= None,
+    )
+    parser.add_argument("--walkdir",
+        type= str,
+        help= "The log directory of the walking model, not for the skills.",
+        default= None,
+    )
+    parser.add_argument("--mode",
+        type= str,
+        help= "The mode to determine which computer to run on.",
+        choices= ["jetson", "upboard", "full"],                
+    )
+    parser.add_argument("--debug",
+        action= "store_true",
+    )
+
+    #import pdb;pdb.set_trace()
+    args, unknown = parser.parse_known_args()
+    print(args)
+    main(args)

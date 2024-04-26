@@ -1,16 +1,18 @@
 <launch>
-  <!-- assumes ds4drv is running -->
-  <node name="joy_node" pkg="joy" type="joy_node">
-    <remap from="joy" to="joy_orig"/>
-  </node>
+<!-- assumes ds4drv is running -->
+<arg name="namespace" default="ambot_v1" />
+<arg name="controller_args" default="--namespace ambot_v1" />
 
+<node name="joy_node" pkg="joy" type="joy_node" args="$(arg controller_args)" output="screen" required="true">
+<remap from="$(arg namespace)/joy" to="$(arg namespace)/joy_orig"/>
+</node>
 
-  <!-- remap joy to emulate ps3joy mappings -->
-  <node name="joy_remap" pkg="joy" type="joy_remap.py" output="screen" required="true" >
-    <remap from="joy_in" to="joy_orig"/>
-    <remap from="joy_out" to="joy"/>
-    <rosparam command="load" file="$(find joy)/config/ps5joy.yaml"/>
-  </node>
+<!-- remap joy to emulate ps5joy mappings -->
+<node name="joy_remap" pkg="joy" type="joy_remap.py" output="screen" required="true" args="$(arg controller_args)">
+<remap from="$(arg namespace)/joy_in" to="$(arg namespace)/joy_orig"/>
+<remap from="$(arg namespace)/joy_out" to="$(arg namespace)/joy"/>
+<rosparam command="load" file="$(find joy)/config/ps5joy.yaml"/>
+</node>
 
 
 </launch>

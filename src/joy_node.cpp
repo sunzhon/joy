@@ -302,10 +302,13 @@ public:
     diagnostic_.add("Joystick Driver Status", this, &Joystick::diagnostics);
     diagnostic_.setHardwareID("none");
 
+     std::string arg1(argv[2]);
+     //std::string arg1 = std::string("ambot_v1");
+
     // Parameters
     ros::NodeHandle nh_param("~");
-    pub_ = nh_.advertise<sensor_msgs::Joy>("joy", 1);
-    ros::Subscriber sub = nh_.subscribe("joy/set_feedback", 10, &Joystick::set_feedback, this);
+    pub_ = nh_.advertise<sensor_msgs::Joy>(arg1+"/joy", 1);
+    ros::Subscriber sub = nh_.subscribe(arg1+"/joy/set_feedback", 10, &Joystick::set_feedback, this);
     nh_param.param<std::string>("dev", joy_dev_, "/dev/input/js0");
     nh_param.param<std::string>("dev_ff", joy_dev_ff_, "/dev/input/event0");
     nh_param.param<std::string>("dev_name", joy_dev_name_, "");
@@ -680,7 +683,12 @@ public:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "joy_node");
-  Joystick j;
-  return j.main(argc, argv);
+    ros::init(argc, argv, "joy_node");
+    Joystick j;
+    for(int i=0;i<argc;i++)
+    {
+        std::cout<<"argument["<<i<<"] is: "<<argv[i]<<std::endl;
+    }
+    
+    return j.main(argc, argv);
 }
