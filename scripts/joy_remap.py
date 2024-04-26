@@ -7,6 +7,7 @@ import operator as op
 import rospy
 import traceback
 from sensor_msgs.msg import Joy
+from geometry_msgs.msg import Twist, Pose
 
 
 class RestrictedEvaluator(object):
@@ -47,6 +48,7 @@ class RestrictedEvaluator(object):
             try:
                 return var[idx]
             except IndexError:
+                import pdb; pdb.set_trace()
                 raise IndexError("Variable '%s' out of range: %d >= %d" % (node.value.id, idx, len(var)))
         else:
             raise TypeError("Unsupported operation: %s" % node)
@@ -67,12 +69,14 @@ class JoyRemap(object):
         self.evaluator = RestrictedEvaluator()
         self.mappings = self.load_mappings("~mappings")
         self.warn_remap("joy_out")
-        self.pub = rospy.Publisher(
+        self.pub_joy = rospy.Publisher(
             "joy_out", Joy, queue_size=1)
         self.warn_remap("joy_in")
         self.sub = rospy.Subscriber(
             "joy_in", Joy, self.callback,
             queue_size=rospy.get_param("~queue_size", None))
+        self.pub_twist = rospy.Publisher(
+            "cmd_vel", Twist, queue_size=1)
 
     def load_mappings(self, ns):
         btn_remap = rospy.get_param(ns + "/buttons", [])
@@ -91,6 +95,7 @@ class JoyRemap(object):
         out_msg.axes = [0.0] * len(map_axes)
         out_msg.buttons = [0] * len(map_btns)
         in_dic = {"axes": in_msg.axes, "buttons": in_msg.buttons}
+        #import pdb;pdb.set_trace()
         for i, exp in enumerate(map_axes):
             try:
                 out_msg.axes[i] = self.evaluator.reval(exp, in_dic)
@@ -112,7 +117,14 @@ class JoyRemap(object):
             except Exception as e:
                 raise e
 
-        self.pub.publish(out_msg)
+        self.pub_joy.publish(out_msg)
+        #import pdb;pdb.set_trace()
+        
+        twist_msg =  Twist()
+        twist_msg.linear.x = out_msg.axes[0]
+        twist_msg.linear.y = out_msg.axes[1]
+        twist_msg.angular.z = out_msg.axes[2]
+        self.pub_twist.publish(twist_msg)
 
 
 if __name__ == '__main__':
