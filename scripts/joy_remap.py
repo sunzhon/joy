@@ -8,7 +8,8 @@ import rospy
 import traceback
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist, Pose
-
+import threading
+import time
 
 class RestrictedEvaluator(object):
     def __init__(self):
@@ -78,6 +79,12 @@ class JoyRemap(object):
             queue_size=rospy.get_param("~queue_size", None))
         self.pub_twist = rospy.Publisher(self.namespace + "/"
             "cmd_vel", Twist, queue_size=1)
+    
+
+        # param server
+        self.param_keys = [self.namespace+"/operation_cmd/" + tmp for tmp in ["Vx", "Vy", "Rz", "motion_mode"]]
+        self.param_values = [0, 0, 0, 0]
+        self.rosparam_server()
 
     def load_mappings(self, ns):
         btn_remap = rospy.get_param(ns + "/buttons", [])
@@ -118,15 +125,36 @@ class JoyRemap(object):
             except Exception as e:
                 raise e
 
-        self.pub_joy.publish(out_msg)
-        #import pdb;pdb.set_trace()
-        
+        # fill twist msg
         twist_msg =  Twist()
         twist_msg.linear.x = out_msg.axes[0]
         twist_msg.linear.y = out_msg.axes[1]
         twist_msg.angular.z = out_msg.axes[2]
+
+
+        # fill ros parameter servers
+        for i in range(4):
+            if out_msg.buttons[i]==1:
+                self.param_values[-1]=i
+                break
+
+        # pub message
+        self.pub_joy.publish(out_msg)
         self.pub_twist.publish(twist_msg)
-        rospy.set_param(self.namespace + "/operation_cmd/motion_mode", out_msg.buttons[0])
+
+    def rosparam_server(self):
+        self.lock  =  threading.Lock()
+        thread = threading.Thread(target=self._rosparam_server, daemon=True)
+        thread.start()
+
+    def _rosparam_server(self):
+        while not rospy.is_shutdown():
+            self.lock.acquire()
+            for idx in range(len(self.param_keys)):
+                rospy.set_param(self.param_keys[idx], self.param_values[idx])
+            self.lock.release()
+            time.sleep(1.5)
+
 
 
 def main(args):
