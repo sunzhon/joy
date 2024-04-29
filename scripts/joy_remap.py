@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/home/ubuntu/.pyenv/versions/machinelearning/bin/python
+#/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
@@ -153,7 +154,7 @@ class JoyRemap(object):
             for idx in range(len(self.param_keys)):
                 rospy.set_param(self.param_keys[idx], self.param_values[idx])
             self.lock.release()
-            time.sleep(1.5)
+            time.sleep(1)
 
 
 
