@@ -11,6 +11,8 @@ from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist, Pose
 import threading
 import time
+from collections import OrderedDict
+import math
 
 class RestrictedEvaluator(object):
     def __init__(self):
@@ -50,7 +52,6 @@ class RestrictedEvaluator(object):
             try:
                 return var[idx]
             except IndexError:
-                import pdb; pdb.set_trace()
                 raise IndexError("Variable '%s' out of range: %d >= %d" % (node.value.id, idx, len(var)))
         else:
             raise TypeError("Unsupported operation: %s" % node)
@@ -83,8 +84,12 @@ class JoyRemap(object):
     
 
         # param server
-        self.param_keys = [self.namespace+"/operation_cmd/" + tmp for tmp in ["Vx", "Vy", "Rz", "motion_mode"]]
-        self.param_values = [0, 0, 0, 0]
+        self.rosparams = {}
+        self.rosparams[self.namespace+"/operation_cmd/"+"control_mode"] = 0 
+        self.rosparams[self.namespace+"/operation_cmd/"+"gait_frequency_cmd"] = 1 
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.12 
+        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = 0.01
+        self.rosparams[self.namespace+"/operation_cmd/"+"gait"] = 0
         self.rosparam_server()
 
     def load_mappings(self, ns):
@@ -104,7 +109,6 @@ class JoyRemap(object):
         out_msg.axes = [0.0] * len(map_axes)
         out_msg.buttons = [0] * len(map_btns)
         in_dic = {"axes": in_msg.axes, "buttons": in_msg.buttons}
-        #import pdb;pdb.set_trace()
         for i, exp in enumerate(map_axes):
             try:
                 out_msg.axes[i] = self.evaluator.reval(exp, in_dic)
@@ -132,12 +136,39 @@ class JoyRemap(object):
         twist_msg.linear.y = out_msg.axes[1]
         twist_msg.angular.z = out_msg.axes[2]
 
-
         # fill ros parameter servers
-        for i in range(4):
-            if out_msg.buttons[i]==1:
-                self.param_values[-1]=i
+        keys=["Vx","Vy","Rz"]
+        for idx in range(3):
+            if out_msg.axes[idx]!=0:
+                tmp = self.namespace+"/operation_cmd/"+keys[idx]
+                self.rosparams[tmp] = out_msg.axes[idx]
                 break
+
+        for i in range(2): # button 0-1 is gaits
+            if out_msg.buttons[i]==1:
+                tmp = self.namespace+"/operation_cmd/"+"gait"
+                self.rosparams[tmp]  += 1 if i==0 else -1
+                self.rosparams[tmp] %= 4
+                break
+
+        for i in range(2,4): # button 2,3 is fre
+            if out_msg.buttons[i]==1:
+                tmp = self.namespace+"/operation_cmd/"+"gait_frequency_cmd"
+                self.rosparams[tmp] += 1 if i==2 else -1
+                self.rosparams[tmp] %= 6
+                break
+
+        for i in range(4,6): # button 4,5 is mode
+            if out_msg.buttons[i]==1:
+                tmp = self.namespace+"/operation_cmd/"+"control_mode"
+                self.rosparams[tmp] += 1 if i==4 else -1
+                self.rosparams[tmp] %= 4
+                break
+
+
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.01*out_msg.axes[6]
+        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.01*out_msg.axes[7]
+
 
         # pub message
         self.pub_joy.publish(out_msg)
@@ -151,10 +182,11 @@ class JoyRemap(object):
     def _rosparam_server(self):
         while not rospy.is_shutdown():
             self.lock.acquire()
-            for idx in range(len(self.param_keys)):
-                rospy.set_param(self.param_keys[idx], self.param_values[idx])
+            for key, value in self.rosparams.items():
+                if(rospy.has_param(key)):
+                    rospy.set_param(key, value)
             self.lock.release()
-            time.sleep(1)
+            time.sleep(0.5)
 
 
 
@@ -192,7 +224,6 @@ if __name__ == '__main__':
         action= "store_true",
     )
 
-    #import pdb;pdb.set_trace()
     args, unknown = parser.parse_known_args()
     print(args)
     main(args)
