@@ -1,4 +1,4 @@
-#!/home/ubuntu/.pyenv/versions/machinelearning/bin/python
+#!/home/suntao/.pyenv/versions/machinelearning/bin/python3.9
 #/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
@@ -82,7 +82,6 @@ class JoyRemap(object):
         self.pub_twist = rospy.Publisher(self.namespace + "/"
             "cmd_vel", Twist, queue_size=1)
     
-
         # param server
         self.rosparams = {}
         self.rosparams[self.namespace+"/operation_cmd/"+"control_mode"] = 0 
@@ -90,6 +89,8 @@ class JoyRemap(object):
         self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.12 
         self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = 0.01
         self.rosparams[self.namespace+"/operation_cmd/"+"gait"] = 0
+        import copy
+        self.rosparams_old = copy.copy(self.rosparams)
         self.rosparam_server()
 
     def load_mappings(self, ns):
@@ -160,7 +161,7 @@ class JoyRemap(object):
 
         for i in range(4,6): # button 4,5 is mode
             if out_msg.buttons[i]==1:
-                tmp = self.namespace+"/operation_cmd/"+"control_mode"
+                tmp = self.namespace+"/operation_cmd/"+"motion_mode"
                 self.rosparams[tmp] += 1 if i==4 else -1
                 self.rosparams[tmp] %= 4
                 break
@@ -183,8 +184,10 @@ class JoyRemap(object):
         while not rospy.is_shutdown():
             self.lock.acquire()
             for key, value in self.rosparams.items():
-                if(rospy.has_param(key)):
-                    rospy.set_param(key, value)
+                if self.rosparams_old[key] != value: # checking whether the rosparam value changed
+                    self.rosparams_old[key] = value
+                    if(rospy.has_param(key)):
+                        rospy.set_param(key, value)
             self.lock.release()
             time.sleep(0.5)
 
