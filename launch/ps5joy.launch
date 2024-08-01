@@ -1,7 +1,7 @@
 <launch>
 <!-- assumes ds4drv is running -->
-<arg name="namespace" default="ambot_v1" />
-<arg name="controller_args" default="--namespace ambot_v1" />
+<arg name="namespace" default="ambot_v2" />
+<arg name="controller_args" default="--namespace $(arg namespace)" />
 
 <node name="joy_node" pkg="joy" type="joy_node" args="$(arg controller_args)" output="screen" required="true">
 <remap from="$(arg namespace)/joy" to="$(arg namespace)/joy_orig"/>
