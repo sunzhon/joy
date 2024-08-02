@@ -1,6 +1,6 @@
 <launch>
 <!-- assumes ds4drv is running -->
-<arg name="namespace" default="ambot_v2" />
+<arg name="namespace" default="$(env ROBOTNAME)" />
 <arg name="controller_args" default="--namespace $(arg namespace)" />
 
 <node name="joy_node" pkg="joy" type="joy_node" args="$(arg controller_args)" output="screen" required="true">
