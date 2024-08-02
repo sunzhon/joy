@@ -1,4 +1,4 @@
-#!/home/suntao/.pyenv/versions/machinelearning/bin/python3.9
+#!/home/suntao/.pyenv/versions/parkour/bin/python
 #/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
