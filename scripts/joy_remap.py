@@ -1,4 +1,4 @@
-#!/home/suntao/.pyenv/versions/parkour/bin/python
+#!/home/suntao/.pyenv/versions/parkour/bin/python3
 #/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
@@ -84,11 +84,14 @@ class JoyRemap(object):
     
         # param server
         self.rosparams = {}
-        self.rosparams[self.namespace+"/operation_cmd/"+"control_mode"] = 0 
+        self.rosparams[self.namespace+"/operation_cmd/"+"motion_mode"] = 0 
         self.rosparams[self.namespace+"/operation_cmd/"+"gait_frequency_cmd"] = 1 
         self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.12 
         self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = 0.01
         self.rosparams[self.namespace+"/operation_cmd/"+"gait"] = 0
+        self.rosparams[self.namespace+"/operation_cmd/"+"Vx"] = 0
+        self.rosparams[self.namespace+"/operation_cmd/"+"Vy"] = 0
+        self.rosparams[self.namespace+"/operation_cmd/"+"Vz"] = 0
         import copy
         self.rosparams_old = copy.copy(self.rosparams)
         self.rosparam_server()
