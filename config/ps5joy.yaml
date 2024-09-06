@@ -19,3 +19,19 @@ mappings:
     - buttons[6]
     - buttons[7]
     - buttons[8]
+
+operation_cmds:
+        - motion_mode
+        - Vx
+        - Vy
+        - Rz
+        - gait
+        - gait_duration
+        - gait_frequency_cmd
+        - feetswing_height_cmd
+        - body_height_cmd
+        - body_roll
+        - body_pitch
+        - stance_width_cmd
+        - stance_length_cmd
+

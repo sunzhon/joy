@@ -1,6 +1,7 @@
-#!/home/suntao/.pyenv/versions/parkour/bin/python3
-#/usr/bin/env python3
+#!/home/cc/.pyenv/versions/machinelearning/bin/python3
 # -*- coding: utf-8 -*-
+#!/home/suntao/.pyenv/versions/machinelearning/bin/python3
+#/usr/bin/env python3
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
 import ast
@@ -84,14 +85,22 @@ class JoyRemap(object):
     
         # param server
         self.rosparams = {}
-        self.rosparams[self.namespace+"/operation_cmd/"+"motion_mode"] = 0 
-        self.rosparams[self.namespace+"/operation_cmd/"+"gait_frequency_cmd"] = 1 
-        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.12 
+        operation_params = rospy.get_param("joy_remap/operation_cmds")
+        for key in operation_params:
+            self.rosparams[self.namespace+"/operation_cmd/"+key] = 0
+
+        """
+        self.rosparams[self.namespace+"/operation_cmd/"+"motion_mode"] = -1
+        self.rosparams[self.namespace+"/operation_cmd/"+"gait_frequency_cmd"] = 2 
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.0 
         self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = 0.01
         self.rosparams[self.namespace+"/operation_cmd/"+"gait"] = 0
         self.rosparams[self.namespace+"/operation_cmd/"+"Vx"] = 0
         self.rosparams[self.namespace+"/operation_cmd/"+"Vy"] = 0
-        self.rosparams[self.namespace+"/operation_cmd/"+"Vz"] = 0
+        self.rosparams[self.namespace+"/operation_cmd/"+"Rz"] = 0
+
+	"""
+
         import copy
         self.rosparams_old = copy.copy(self.rosparams)
         self.rosparam_server()
@@ -142,7 +151,7 @@ class JoyRemap(object):
 
         # fill ros parameter servers
         keys=["Vx","Vy","Rz"]
-        for idx in range(3):
+        for idx in range(3): # walking speeds
             if out_msg.axes[idx]!=0:
                 tmp = self.namespace+"/operation_cmd/"+keys[idx]
                 self.rosparams[tmp] = out_msg.axes[idx]
@@ -169,7 +178,7 @@ class JoyRemap(object):
                 self.rosparams[tmp] %= 4
                 break
 
-
+	
         self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.01*out_msg.axes[6]
         self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.01*out_msg.axes[7]
 
