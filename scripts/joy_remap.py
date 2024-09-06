@@ -89,18 +89,6 @@ class JoyRemap(object):
         for key in operation_params:
             self.rosparams[self.namespace+"/operation_cmd/"+key] = 0
 
-        """
-        self.rosparams[self.namespace+"/operation_cmd/"+"motion_mode"] = -1
-        self.rosparams[self.namespace+"/operation_cmd/"+"gait_frequency_cmd"] = 2 
-        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = 0.0 
-        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = 0.01
-        self.rosparams[self.namespace+"/operation_cmd/"+"gait"] = 0
-        self.rosparams[self.namespace+"/operation_cmd/"+"Vx"] = 0
-        self.rosparams[self.namespace+"/operation_cmd/"+"Vy"] = 0
-        self.rosparams[self.namespace+"/operation_cmd/"+"Rz"] = 0
-
-	"""
-
         import copy
         self.rosparams_old = copy.copy(self.rosparams)
         self.rosparam_server()
@@ -168,7 +156,8 @@ class JoyRemap(object):
             if out_msg.buttons[i]==1:
                 tmp = self.namespace+"/operation_cmd/"+"gait_frequency_cmd"
                 self.rosparams[tmp] += 1 if i==2 else -1
-                self.rosparams[tmp] %= 6
+                self.rosparams[tmp] = self.rosparams[tmp] if self.rosparams[tmp] > 1 else 1
+                self.rosparams[tmp] %= 5
                 break
 
         for i in range(4,6): # button 4,5 is mode
@@ -179,8 +168,8 @@ class JoyRemap(object):
                 break
 
 	
-        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.01*out_msg.axes[6]
-        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.01*out_msg.axes[7]
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.010*out_msg.axes[6]
+        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.010*out_msg.axes[7]
 
 
         # pub message
