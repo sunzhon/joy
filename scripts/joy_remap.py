@@ -1,8 +1,10 @@
-#!/home/cc/.pyenv/versions/machinelearning/bin/python3
+#!/home/ubuntu/.pyenv/versions/machinelearning/bin/python3
 # -*- coding: utf-8 -*-
 #!/home/suntao/.pyenv/versions/machinelearning/bin/python3
+#!/home/cc/.pyenv/versions/machinelearning/bin/python3
 #/usr/bin/env python3
 # Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
+# Modified by: Tao Sun <suntao.hn@gmail.com>
 
 import ast
 import operator as op
