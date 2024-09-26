@@ -16,6 +16,7 @@ import threading
 import time
 from collections import OrderedDict
 import math
+import numpy as np
 
 class RestrictedEvaluator(object):
     def __init__(self):
@@ -95,6 +96,8 @@ class JoyRemap(object):
         self.rosparams_old = copy.copy(self.rosparams)
         self.rosparam_server()
 
+        self.speed_gain = 1.0
+
     def load_mappings(self, ns):
         btn_remap = rospy.get_param(ns + "/buttons", [])
         axes_remap = rospy.get_param(ns + "/axes", [])
@@ -142,36 +145,52 @@ class JoyRemap(object):
         # fill ros parameter servers
         keys=["Vx","Vy","Rz"]
         for idx in range(3): # walking speeds
-            if out_msg.axes[idx]!=0:
-                tmp = self.namespace+"/operation_cmd/"+keys[idx]
-                self.rosparams[tmp] = out_msg.axes[idx]
-                break
+            tmp = self.namespace+"/operation_cmd/"+keys[idx]
+            self.rosparams[tmp] = self.speed_gain * out_msg.axes[idx]
+            self.rosparams[tmp] = float(np.clip(self.rosparams[tmp],-1.5,1.5))
 
         for i in range(2): # button 0-1 is gaits
             if out_msg.buttons[i]==1:
                 tmp = self.namespace+"/operation_cmd/"+"gait"
                 self.rosparams[tmp]  += 1 if i==0 else -1
-                self.rosparams[tmp] %= 4
+                self.rosparams[tmp] = int(np.clip(self.rosparams[tmp], 0,3))
                 break
 
-        for i in range(2,4): # button 2,3 is fre
+        for i in range(2,4): # button 2,3 is step freq
             if out_msg.buttons[i]==1:
                 tmp = self.namespace+"/operation_cmd/"+"gait_frequency_cmd"
                 self.rosparams[tmp] += 1 if i==2 else -1
                 self.rosparams[tmp] = self.rosparams[tmp] if self.rosparams[tmp] > 1 else 1
-                self.rosparams[tmp] %= 5
+                self.rosparams[tmp] = int(np.clip(self.rosparams[tmp], 0, 4))
                 break
 
-        for i in range(4,6): # button 4,5 is mode
+        for i in [4,5]: # button 4,5 is mode
             if out_msg.buttons[i]==1:
                 tmp = self.namespace+"/operation_cmd/"+"motion_mode"
                 self.rosparams[tmp] += 1 if i==4 else -1
-                self.rosparams[tmp] %= 4
+                self.rosparams[tmp] = int(np.clip(self.rosparams[tmp], 0, 3))
                 break
 
-	
-        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.010*out_msg.axes[6]
-        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.010*out_msg.axes[7]
+        for i in [6,7]: # button 6,7 is walking speed gain
+            if out_msg.buttons[i]==1:
+                self.speed_gain += 0.2 if i==6 else -1
+                self.speed_gain = float(np.clip(self.speed_gain, 0.4, 1.5))
+                print(f"speed gain : {self.speed_gain}")
+                break
+
+        if out_msg.buttons[9] == 1:
+            tmp = self.namespace +"/operation_cmd/"+"motion_mode"
+            self.rosparams[tmp] = 4 # shutdown controller
+
+        
+
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] += 0.10*out_msg.axes[6]
+        value = self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"]
+        self.rosparams[self.namespace+"/operation_cmd/"+"body_height_cmd"] = float(np.clip(value, -1,1))
+
+        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] += 0.10*out_msg.axes[7]
+        value = self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"]
+        self.rosparams[self.namespace+"/operation_cmd/"+"feetswing_height_cmd"] = float(np.clip(value, -1.0, 1.0))
 
 
         # pub message
@@ -193,8 +212,6 @@ class JoyRemap(object):
                         rospy.set_param(key, value)
             self.lock.release()
             time.sleep(0.5)
-
-
 
 def main(args):
     rospy.init_node("joy_remap")

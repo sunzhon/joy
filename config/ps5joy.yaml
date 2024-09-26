@@ -19,6 +19,7 @@ mappings:
     - buttons[6]
     - buttons[7]
     - buttons[8]
+    - buttons[9]
 
 operation_cmds:
         - motion_mode
