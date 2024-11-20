@@ -18,9 +18,12 @@ setup(
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
+    data_files =[
+    (os.path.join('share', package_name), glob('launch/*.launch.py'))
+    ],
     entry_points={
         'console_scripts': [
-            'joy_node = joy.joy_node:main'
+            'joy_remap_node = joy.joy_remap:main'
         ],
     },
 )

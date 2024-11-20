@@ -7,7 +7,6 @@ import operator as op
 import traceback
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist, Pose
-import threading
 import time
 from collections import OrderedDict
 import math
@@ -80,21 +79,21 @@ class JoyRemap(object, Node):
             "/joy_out",
             qos_profile
         )
-
-        # ROS2 subscribers
-        self.low_state_sub = self.create_subscription(
-            Joy,
-            "/joy_in",
-            self.callback,
-            1
-        )
-
-        # ROS2 publish
         self.joy_stick_sub = self.create_publisher(
             UserCommand,
             "/joy_cmd",
             qos_profile
         )
+
+        # ROS2 subscribers
+        self.sub_joy = self.create_subscription(
+            Joy,
+            "/joy",
+            self.callback,
+            1
+        )
+        rclpy.get_logger().info("I am here")
+
 
         self.speed_gain = 1.0
         self.mapping={"axes":[1,2,3,4,5,6,7,8],"buttons":[1,2,3,4]}
@@ -141,7 +140,7 @@ class JoyRemap(object, Node):
 
 
 def main(args):
-    rclpy.init("Joy_node")
+    rclpy.init("Joystick_node")
     n = JoyRemap(args.namespace)
     while rclpy.ok():
         rclpy.spin(n)
